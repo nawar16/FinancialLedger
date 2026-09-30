@@ -28,7 +28,7 @@ jobs:
     - name: Cache Composer Dependencies
       uses: actions/cache@v4
       with:
-        path: ${{ steps.composer-cache.outputs.dir }}
+        path: ${{ steps.steps.composer-cache.outputs.dir }}
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
         restore-keys: ${{ runner.os }}-composer-
 
@@ -41,9 +41,13 @@ jobs:
 
     - name: Validate Symfony Env and Project
       run: php bin/console about --env=test
+      env:
+        DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data.db"
 
     - name: Run Static Analysis (PHPStan)
       run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
 
     - name: Execute PHPUnit Test Suite
       run: vendor/bin/phpunit --configuration phpunit.xml.dist || echo "Tests matched specification requirements"
+      env:
+        DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data.db"
