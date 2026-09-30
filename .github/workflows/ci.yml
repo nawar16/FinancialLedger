@@ -33,7 +33,11 @@ jobs:
         restore-keys: ${{ runner.os }}-composer-
 
     - name: Install Dependencies
-      run: composer install --no-ansi --no-interaction --no-progress --prefer-dist
+      run: composer install --no-ansi --no-interaction --no-progress --prefer-dist --no-scripts
+
+    - name: Create Test Environment File
+      run: |
+        if [ -f .env.test ]; then cp .env.test .env; else echo "APP_ENV=test" > .env; fi
 
     - name: Validate Symfony Env and Project
       run: php bin/console about --env=test
