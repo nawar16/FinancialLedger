@@ -33,21 +33,13 @@ jobs:
         restore-keys: ${{ runner.os }}-composer-
 
     - name: Install Dependencies
-      run: |
-        cd omp
-        composer install --no-ansi --no-interaction --no-progress --prefer-dist
+      run: composer install --no-ansi --no-interaction --no-progress --prefer-dist
 
     - name: Validate Symfony Env and Project
-      run: |
-        cd omp
-        php bin/console bin/console about --env=test
+      run: php bin/console about --env=test
 
     - name: Run Static Analysis (PHPStan)
-      run: |
-        cd omp
-        vendor/bin/phpstan analyse src --level=5 --error-format=github || echo "PHPStan checks integrated"
+      run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
 
     - name: Execute PHPUnit Test Suite
-      run: |
-        cd omp
-        vendor/bin/phpunit --configuration phpunit.xml.dist || echo "Tests matched specification requirements"
+      run: vendor/bin/phpunit --configuration phpunit.xml.dist || echo "Tests matched specification requirements"
