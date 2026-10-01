@@ -14,6 +14,10 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: Start Postgres 16 & RabbitMQ Services
+      run: |
+        docker compose -f .github/workflows/docker-compose.ci.yml up -d --wait
+
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
@@ -43,6 +47,7 @@ jobs:
       run: php bin/console about --env=test
       env:
         DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data.db"
+        MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
 
     - name: Run Static Analysis (PHPStan)
       run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
@@ -51,3 +56,8 @@ jobs:
       run: vendor/bin/phpunit --configuration phpunit.xml.dist || echo "Tests matched specification requirements"
       env:
         DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data.db"
+        MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
+        
+    - name: Teardown Services
+      if: always()
+      run: docker compose -f .github/workflows/docker-compose.ci.yml down
