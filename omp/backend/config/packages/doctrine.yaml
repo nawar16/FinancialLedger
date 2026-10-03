@@ -1,0 +1,22 @@
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+        charset: utf8mb4
+    orm:
+        auto_generate_proxy_classes: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore
+        auto_mapping: true
+        mappings:
+            App:
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Entity'
+                prefix: 'App\Entity'
+                type: attribute
+        dql:
+            datetime_functions:
+                YEAR: Doctrine\ORM\Query\AST\Functions\Year
+                MONTH: Doctrine\ORM\Query\AST\Functions\Month
+                DAY: Doctrine\ORM\Query\AST\Functions\Day
+
+        # Connection topology: symfony_app (data-only) vs migration_admin (DDL)
+        # Configured at server/DB-user level; this mapping ensures app uses least privilege
