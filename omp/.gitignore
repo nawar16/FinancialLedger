@@ -1,3 +1,20 @@
 # Spec-Kit
 .specify/extensions/*/
 .specify/presets/*/
+# PHP / Symfony / Doctrine / PostgreSQL
+vendor/
+node_modules/
+dist/
+build/
+var/
+.cache/
+.env
+.env.local
+.env.*.local
+*.log
+*.cache
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
