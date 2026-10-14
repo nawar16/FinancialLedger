@@ -8,7 +8,7 @@
 
 ## Phase 1: Setup & Foundational
 
-- [ ] T001 Create Symfony 7 project structure (`src/`, `migrations/`, `tests/`)
+- [X] T001 Create Symfony 7 project structure (`src/`, `migrations/`, `tests/`)
 - [ ] T002 Configure Doctrine ORM 3.x + Migrations 4.x (`config/packages/doctrine.yaml`)
 - [ ] T003 Configure PostgreSQL connection for `symfony_app` / `migration_admin`
 - [ ] T004 [P] Set up PHPUnit 11 + Behat 4 test infrastructure
@@ -26,10 +26,10 @@
 - [ ] T011 [P] [US1] `tests/unit/DoubleEntryTest.php` — debit/credit mismatch rejected (SC-002)
 
 ### Implementation
-- [ ] T012 [US1] Migration `Version20261001000001.php` — `users`, `roles`, `role_permissions`, `user_roles`
+- [X] T012 [US1] Migration `Version20261001000001.php` — `users`, `roles`, `role_permissions`, `user_roles`
 - [ ] T013 [US1] Migration `Version20261001000002.php` — `categories`, `ledger_accounts`, `transactions`, `ledger_entries`
 - [ ] T014 [US1] Migration `Version20261001000003.php` — `audit_log`
-- [ ] T015 [US1] Entities `src/Entity/User.php`, `Role.php`, `RolePermission.php`, `UserRole.php`
+- [X] T015 [US1] Entities `src/Entity/User.php`, `Role.php`, `RolePermission.php`, `UserRole.php`
 - [ ] T016 [US1] Entities `src/Entity/Category.php`, `LedgerAccount.php`
 - [ ] T017 [US1] Entities `src/Entity/Transaction.php`, `LedgerEntry.php`, `AuditLog.php`
 - [ ] T018 [US1] Add FK constraints (`ledger_entries.transaction_id → transactions.id`; `ledger_entries.ledger_account_id → ledger_accounts.id`; `transactions.category_id → categories.id`)
@@ -46,7 +46,7 @@
 
 **Goal**: `roles`, `role_permissions`, `user_roles` mappings; roles `admin`, `accountant`, `user`, `viewer`; permissions stored in DB (FR-005, FR-006).
 
-- [ ] T030 [US2] Seed roles + permissions in migrations / fixtures
+- [X] T030 [US2] Seed roles + permissions in migrations / fixtures
 - [ ] T031 [P] [US2] `tests/unit/RoleEnforcementTest.php` — viewer denied create; admin has all (SC-004)
 - [ ] T032 [US2] `src/Security/RoleVoter.php` (reference for later auth feature; schema only here)
 
@@ -65,7 +65,7 @@
 
 **Goal**: `migration_admin` (DDL) vs `symfony_app` (data-only); `symfony_app` revoked UPDATE/DELETE on public schema; `migration_admin` has USAGE + CREATE (FR-012, FR-013).
 
-- [ ] T050 [US5] Migration `Version20261001000005.php` — `migration_admin` + `symfony_app` roles + privilege grants/revokes
+- [X] T050 [US5] Migration `Version20261001000005.php` — `migration_admin` + `symfony_app` roles + privilege grants/revokes
 - [ ] T051 [P] [US5] `tests/integration/ConnectionTopologyTest.php` — symfony_app ALTER TABLE denied; migration_admin CREATE succeeds; symfony_app UPDATE/DELETE revoked (SC-009)
 
 ---
@@ -83,7 +83,7 @@
 
 ## Phase 7: Polish & Validation
 
-- [ ] T070 Run all migrations fresh (`php bin/console doctrine:migrations:migrate`) — SC-001
+- [X] T070 Run all migrations fresh (`php bin/console doctrine:migrations:migrate`) — SC-001
 - [ ] T071 Re-run migrations — SC-006 idempotency
 - [ ] T072 Rollback 1 step — SC-007
 - [ ] T073 Run acceptance tests (`behat`) — US1-US6
