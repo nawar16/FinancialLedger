@@ -1,0 +1,8 @@
+<?php
+namespace DoctrineMigrations;
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\Migrations\AbstractMigration;
+final class Version20261001000001 extends AbstractMigration {
+    public function up(Schema $schema): void {}
+    public function down(Schema $schema): void {}
+}
