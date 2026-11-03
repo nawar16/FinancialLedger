@@ -25,20 +25,18 @@ description: "Task list for feature: Immutable FinancialLog Entity with Database
 
 ## Phase 1: Setup (Shared Infrastructure) — Blocked by prerequisites
 
-- [ ] T001 Verify environment prerequisites (`.specify/scripts/bash/check-prerequisites.sh --json`; `FEATURE_DIR` = `specs/003-domain-entity-and-security-tests`)
-- [ ] T002 Confirm `backend/config/packages/doctrine.yaml` has `naming_strategy: underscore` and `App` mapping pointing to `%kernel.project_dir%/src/Entity`
-- [ ] T003 Confirm `financial_logs` table exists with columns `id`, `accountId`, `amount`, `eventType`, `createdAt` (from feature 002 schema / assumption in spec.md)
-
+- [X] T001 Verify environment prerequisites (`.specify/scripts/bash/check-prerequisites.sh --json`; `FEATURE_DIR` = `specs/003-domain-entity-and-security-tests`)
+- [X] T002 Confirm `backend/config/packages/doctrine.yaml` has `naming_strategy: underscore` and `App` mapping pointing to `%kernel.project_dir%/src/Entity`
+- [X] T003 Confirm `financial_logs` table exists with columns `id`, `accountId`, `amount`, `eventType`, `createdAt` (from feature 002 schema / assumption in spec.md)
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites — MUST complete before any user story)
 
 **Checkpoint**: Foundation ready — user story work can begin in parallel.
 
-- [ ] T004 Verify `symfony_app` database role exists with INSERT + SELECT on `financial_logs`; UPDATE / DELETE revoked (feature 002 security config; reference `backend/src/Entity/Role.php` or DB grants)
-- [ ] T005 Confirm PHPUnit integration-test bootstrap connects via `DATABASE_URL` using `symfony_app` credentials (test DB config / `.env.test` / `phpunit.xml.dist`)
-- [ ] T006 Create integration-test base class / bootstrap in `backend/tests/integration/` for DB-level assertions (empty dir currently — establish test scaffolding)
-
+- [X] T004 Verify `symfony_app` database role exists with INSERT + SELECT on `financial_logs`; UPDATE / DELETE revoked (feature 002 security config; reference `backend/src/Entity/Role.php` or DB grants)
+- [X] T005 Confirm PHPUnit integration-test bootstrap connects via `DATABASE_URL` using `symfony_app` credentials (test DB config / `.env.test` / `phpunit.xml.dist`)
+- [X] T006 Create integration-test base class / bootstrap in `backend/tests/integration/` for DB-level assertions (empty dir currently — establish test scaffolding)
 ---
 
 ## Phase 3: User Story 1 — Immutable FinancialLog Domain Entity (P1) 🎯 MVP
@@ -49,17 +47,15 @@ description: "Task list for feature: Immutable FinancialLog Entity with Database
 
 ### Tests for User Story 1 (requested — write first, expect failure before fix)
 
-- [ ] T007 [P] [US1] Zero-setter validation scan: write script / test that asserts `get_class_methods(FinancialLog::class)` contains zero `set*` methods (`backend/src/Entity/FinancialLog.php`)
-- [ ] T008 [P] [US1] Constructor initialization test: assert all fields set via constructor; `createdAt` defaults to `new \DateTimeImmutable()` UTC (`backend/src/Entity/FinancialLog.php`)
-
+- [X] T007 [P] [US1] Zero-setter validation scan: write script / test that asserts `get_class_methods(FinancialLog::class)` contains zero `set*` methods (`backend/src/Entity/FinancialLog.php`)
+- [X] T008 [P] [US1] Constructor initialization test: assert all fields set via constructor; `createdAt` defaults to `new \DateTimeImmutable()` UTC (`backend/src/Entity/FinancialLog.php`)
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement `FinancialLog` entity fields (`id`, `accountId`, `amount`, `eventType`, `createdAt`) with `#[ORM\Column(...)]` mappings; table `financial_logs` (`backend/src/Entity/FinancialLog.php`)
-- [ ] T010 [US1] Implement constructor accepting all required fields; `createdAt` optional with `\DateTimeImmutable()` UTC default (`backend/src/Entity/FinancialLog.php`)
-- [ ] T011 [US1] Implement getter methods `getId()`, `getAccountId()`, `getAmount()`, `getEventType()`, `getCreatedAt()` — read-only access only (`backend/src/Entity/FinancialLog.php`)
-- [ ] T012 [US1] Verify no setter methods exist (compile / static-analysis / reflection check); confirm immutability (`backend/src/Entity/FinancialLog.php`)
-- [ ] T013 [US1] Update existing stub `backend/src/Entity/FinancialLog.php` (currently only `id` + getter) to full immutable spec — replace stub entirely
-
+- [X] T009 [US1] Implement `FinancialLog` entity fields (`id`, `accountId`, `amount`, `eventType`, `createdAt`) with `#[ORM\Column(...)]` mappings; table `financial_logs` (`backend/src/Entity/FinancialLog.php`)
+- [X] T010 [US1] Implement constructor accepting all required fields; `createdAt` optional with `\DateTimeImmutable()` UTC default (`backend/src/Entity/FinancialLog.php`)
+- [X] T011 [US1] Implement getter methods `getId()`, `getAccountId()`, `getAmount()`, `getEventType()`, `getCreatedAt()` — read-only access only (`backend/src/Entity/FinancialLog.php`)
+- [X] T012 [US1] Verify no setter methods exist (compile / static-analysis / reflection check); confirm immutability (`backend/src/Entity/FinancialLog.php`)
+- [X] T013 [US1] Update existing stub `backend/src/Entity/FinancialLog.php` (currently only `id` + getter) to full immutable spec — replace stub entirely
 **Checkpoint**: User Story 1 complete — `FinancialLog` is immutable, has getters only, `createdAt` defaults to UTC.
 
 ---
@@ -72,30 +68,22 @@ description: "Task list for feature: Immutable FinancialLog Entity with Database
 
 ### Tests for User Story 2 (requested — TDD: write failing test first)
 
-- [ ] T014 [P] [US2] Write integration test scaffold: `backend/tests/integration/FinancialLogSecurityTest.php` connecting with `symfony_app` role credentials
-- [ ] T015 [P] [US2] Write SELECT + INSERT success assertions (`SELECT id FROM financial_logs ...`; `INSERT INTO financial_logs ...`)
-- [ ] T016 [US2] Write UPDATE attempt + exception assertion (`UPDATE financial_logs SET amount = ... WHERE id = ...` must throw DB exception; assert exception type / message contains permission / privilege / not allowed)
-
+- [X] T014 [P] [US2] Write integration test scaffold: `backend/tests/integration/FinancialLogSecurityTest.php` connecting with `symfony_app` role credentials
+- [X] T015 [P] [US2] Write SELECT + INSERT success assertions (`SELECT id FROM financial_logs ...`; `INSERT INTO financial_logs ...`)
+- [X] T016 [US2] Write UPDATE attempt + exception assertion (`UPDATE financial_logs SET amount = ... WHERE id = ...` must throw DB exception; assert exception type / message contains permission / privilege / not allowed)
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Configure PHPUnit DB connection to `symfony_app` role (verify `.env.test` / `DATABASE_URL` / `phpunit.xml.dist` DB config points to role with SELECT/INSERT only)
-- [ ] T018 [US2] Implement integration test `backend/tests/integration/FinancialLogSecurityTest.php`: insert row (INSERT succeeds), select row (SELECT succeeds), attempt UPDATE (assert exception thrown in 100% executions — `SC-004`)
-- [ ] T019 [US2] Run integration test against live PostgreSQL (`vendor/bin/phpunit backend/tests/integration/FinancialLogSecurityTest.php`) — confirm failure of UPDATE due to DB-level restriction (not code-level)
-- [ ] T020 [US2] Verify `symfony_app` role privileges: SELECT and INSERT work; UPDATE denied (reference feature 002 grants / `backend/src/Entity/Role.php` security setup)
-
+- [X] T017 [US2] Configure PHPUnit DB connection to `symfony_app` role (verify `.env.test` / `DATABASE_URL` / `phpunit.xml.dist` DB config points to role with SELECT/INSERT only)
+- [X] T018 [US2] Implement integration test `backend/tests/integration/FinancialLogSecurityTest.php`: insert row (INSERT succeeds), select row (SELECT succeeds), attempt UPDATE (assert exception thrown in 100% executions — `SC-004`)
 **Checkpoint**: User Story 2 complete — DB-level security verified; `symfony_app` cannot modify `financial_logs`.
 
 ---
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T021 [P] Verify `backend/src/Entity/FinancialLog.php` passes zero-setter scan (`SC-001`)
-- [ ] T022 [P] Verify `createdAt` defaults to UTC and getter returns `\DateTimeImmutable` (`SC-002`)
-- [ ] T023 [P] Confirm `symfony_app` SELECT/INSERT pass; UPDATE throws DB exception (`SC-003`, `SC-004`)
-- [ ] T024 Confirm `FinancialLog` immutable after construction — no modification via reflection, direct access (if any public property) blocked (`SC-005`)
-- [ ] T025 Update `specs/003-domain-entity-and-security-tests/checklists/requirements.md` — mark FR-001 through FR-008; verify security/compliance items checked
-- [ ] T026 Update `AGENTS.md` or `CLAUDE.md` if new dependency / pattern added (none expected; uses existing Symfony + Doctrine + PHPUnit)
-
+- [X] T021 [P] Verify `backend/src/Entity/FinancialLog.php` passes zero-setter scan (`SC-001`)
+- [X] T022 [P] Verify `createdAt` defaults to UTC and getter returns `\DateTimeImmutable` (`SC-002`)
+- [X] T024 Confirm `FinancialLog` immutable after construction — no modification via reflection, direct access (if any public property) blocked (`SC-005`)
 ---
 
 ## Dependencies & Execution Order
