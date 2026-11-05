@@ -1,8 +1,9 @@
 <?php
-namespace App\Entity;
+namespace App\Domain\Ledger;
+
 use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
-#[ORM\Table(name: 'LedgerEntry')]
+#[ORM\Table(name: 'ledger_entries')]
 class LedgerEntry {
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'bigint')]
     private ?int $id = null;
