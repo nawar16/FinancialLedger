@@ -9,14 +9,31 @@ doctrine:
         mappings:
             App:
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/Entity'
-                prefix: 'App\Entity'
+                dir: '%kernel.project_dir%/src/Domain/Auth/Entity'
+                prefix: 'App\Domain\Auth'
+                type: attribute
+            App\Domain\Ledger:
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Domain/Ledger/Entity'
+                prefix: 'App\Domain\Ledger'
+                type: attribute
+            App\Domain\Category:
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Domain/Category/Entity'
+                prefix: 'App\Domain\Category'
+                type: attribute
+            App\Domain\Transaction:
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Domain/Transaction/Entity'
+                prefix: 'App\Domain\Transaction'
+                type: attribute
+            App\Domain\Audit:
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Domain/Audit/Entity'
+                prefix: 'App\Domain\Audit'
                 type: attribute
         dql:
             datetime_functions:
                 YEAR: Doctrine\ORM\Query\AST\Functions\Year
                 MONTH: Doctrine\ORM\Query\AST\Functions\Month
                 DAY: Doctrine\ORM\Query\AST\Functions\Day
-
-        # Connection topology: symfony_app (data-only) vs migration_admin (DDL)
-        # Configured at server/DB-user level; this mapping ensures app uses least privilege

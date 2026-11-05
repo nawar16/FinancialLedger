@@ -10,9 +10,9 @@
  *   SC-005: Entity is immutable after construction (no setter, reflection-set attempts fail)
  */
 
-require __DIR__ . '/../../backend/src/Entity/FinancialLog.php';
+require __DIR__ . '/../../../src/Domain/Ledger/Entity/FinancialLog.php';
 
-use App\Entity\FinancialLog;
+use App\Domain\Ledger\FinancialLog;
 
 $passed = true;
 
