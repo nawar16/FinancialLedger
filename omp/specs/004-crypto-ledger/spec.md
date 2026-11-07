@@ -1,128 +1,85 @@
-# Feature Specification: [FEATURE NAME]
+# Feature Specification: Crypto-Ledger
 
-**Feature Branch**: `[###-feature-name]`  
-**Created**: [DATE]  
+**Feature Branch**: `004-crypto-ledger`  
+**Created**: 2026-11-07  
 **Status**: Draft  
-**Input**: User description: "$ARGUMENTS"
+**Input**: User description: `crypto-ledger`
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing
 
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
+### User Story 1 – Cryptographic Hash Chain Verification (P1)
 
-### User Story 1 - [Brief Title] (Priority: P1)
+**Description**: The ledger must compute SHA-256 hashes for each ledger entry and verify that the hash chain remains intact across entries.
 
-[Describe this user journey in plain language]
+**Why this priority**: Ensures data integrity and prevents tampering of historical records.
 
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
+**Independent Test**: Can be fully tested by running the integration test suite (`backend/tests/integration/FinancialLogSecurityTest.php`) which verifies that a valid chain passes SELECT/INSERT and that an UPDATE attempt throws a database exception.
 
 **Acceptance Scenarios**:
+1. Given a genesis record with no previous hash, when a new entry is added, the hash is computed as `SHA-256(canonical_payload || '|' || previous_hash)` and stored.
+2. Given a sequence of entries, when the chain is verified, all hashes match the expected values.
+3. Given a tampered entry, when the chain is re-verified, the verification fails.
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-2. **Given** [initial state], **When** [action], **Then** [expected outcome]
+### User Story 2 – Deterministic Canonical Serialization (P1)
 
----
+**Description**: Ledger entries must be serialized deterministically so that identical payloads always produce the same JSON representation.
 
-### User Story 2 - [Brief Title] (Priority: P2)
+**Why this priority**: Enables reliable storage, comparison, and audit trails.
 
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently]
+**Independent Test**: Can be tested by instantiating `FinancialLog` objects with the same payload and verifying that `get_class_methods()` contains zero `set*` methods and that `createdAt` defaults to `\DateTimeImmutable()` UTC.
 
 **Acceptance Scenarios**:
+1. Given a payload, when serialized, the output JSON is identical across multiple instantiations.
+2. Given a payload, when serialized, the `createdAt` field is set to the current UTC time.
+3. Given a payload, when serialized, all numeric values are converted to fixed-decimal strings (no floating-point representation).
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+### User Story 3 – Integration Security Tests (P1)
 
----
+**Description**: Integration tests must confirm that the ledger can be accessed by the `symfony_app` role and that unauthorized modifications are blocked.
 
-### User Story 3 - [Brief Title] (Priority: P3)
+**Why this priority**: Security is a core requirement for a tamper‑evident ledger.
 
-[Describe this user journey in plain language]
-
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently]
+**Independent Test**: Can be tested by running `backend/tests/integration/FinancialLogSecurityTest.php` which connects as `symfony_app`, performs SELECT/INSERT, and asserts that an UPDATE attempt throws a database exception.
 
 **Acceptance Scenarios**:
+1. Given a `symfony_app` role, when it executes `SELECT` on the `financial_logs` table, the query succeeds.
+2. Given a `symfony_app` role, when it executes `INSERT` on a new ledger entry, the entry is persisted.
+3. Given a `symfony_app` role, when it attempts to `UPDATE` an existing entry, the operation fails with a database exception (permission/privilege error).
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+## Requirements
 
----
+- **FR-001**: System MUST compute SHA-256 hashes for each ledger entry using the `LedgerHasher` service.
+- **FR-002**: System MUST verify the hash chain integrity using the `LedgerHasher` service.
+- **FR-003**: System MUST serialize ledger entries deterministically via `CanonicalSerializer`.
+- **FR-004**: System MUST allow `symfony_app` role to read and write ledger entries.
+- **FR-005**: System MUST reject unauthorized modifications (tampering detection).
 
-[Add more user stories as needed, each with an assigned priority]
+## Key Entities
 
-### Edge Cases
+- **FinancialLog**: Represents a single ledger entry with fields `id`, `accountId`, `amount`, `eventType`, `createdAt`.
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
+## Success Criteria
 
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
+- **SC-001**: Zero setter methods exist in `FinancialLog` (immutability).
+- **SC-002**: `createdAt` defaults to `\DateTimeImmutable()` UTC and is always present.
+- **SC-003**: SELECT/INSERT operations succeed for `symfony_app`.
+- **SC-004**: UPDATE operations on existing entries throw a database exception.
+- **SC-005**: All user stories are independently testable and pass.
 
-## Requirements *(mandatory)*
+## Edge Cases
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
+- What happens when `createdAt` is explicitly set to a non‑UTC value? (Should be ignored / defaulted to UTC)
+- What happens when a payload contains non‑numeric values in `amount`? (Should be handled by canonical serializer)
+- What happens when the `previousHash` is `null` (genesis record)? (Should be treated as empty string in concatenation)
 
-### Functional Requirements
+## Constraints
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
-
-*Example of marking unclear requirements:*
-
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
-
-### Key Entities *(include if feature involves data)*
-
-- **[Entity 1]**: [What it represents, key attributes without implementation]
-- **[Entity 2]**: [What it represents, relationships to other entities]
-
-## Success Criteria *(mandatory)*
-
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
-
-### Measurable Outcomes
-
-- **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
-- **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
-- **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+- Must use Symfony 7.x and Doctrine ORM.
+- All tests must pass in CI.
+- No external dependencies beyond the existing codebase.
 
 ## Assumptions
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right assumptions based on reasonable defaults
-  chosen when the feature description did not specify certain details.
--->
-
-- [Assumption about target users, e.g., "Users have stable internet connectivity"]
-- [Assumption about scope boundaries, e.g., "Mobile support is out of scope for v1"]
-- [Assumption about data/environment, e.g., "Existing authentication system will be reused"]
-- [Dependency on existing system/service, e.g., "Requires access to the existing user profile API"]
+- The `financial_logs` table already exists with columns `id`, `accountId`, `amount`, `eventType`, `createdAt`.
+- The `symfony_app` role has SELECT/INSERT permissions on the table.
+- The existing `LedgerHasher` and `CanonicalSerializer` classes are available for use.
