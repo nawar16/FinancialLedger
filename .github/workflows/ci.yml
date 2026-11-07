@@ -49,22 +49,29 @@ jobs:
         DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
         MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
 
-    - name: Run Database Migrations
+    # ... previous steps remain the same ...
+
+    - name: Create Test Database as Root Superuser
       run: |
         php bin/console doctrine:database:create --env=test --if-not-exists
+      env:
+        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+
+    - name: Run Database Migrations & Create Roles
+      run: |
         php bin/console doctrine:migrations:migrate --no-interaction --env=test
       env:
-        DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 
     - name: Run Static Analysis (PHPStan)
       run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
 
-    - name: Execute PHPUnit Test Suite
+    - name: Execute PHPUnit Test Suite (As Application Role)
       run: vendor/bin/phpunit --configuration phpunit.xml.dist
       env:
         DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
         MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
-        
+
     - name: Teardown Services
       if: always()
       run: docker compose -f .github/workflows/docker-compose.ci.yml down
