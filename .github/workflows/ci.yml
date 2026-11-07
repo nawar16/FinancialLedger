@@ -2,7 +2,7 @@ name: Symfony CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, feature/* ]
+    branches: [ main, "feature/*" ]
   pull_request:
     branches: [ main ]
 
@@ -22,7 +22,7 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
-        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, pdo_sqlite
         coverage: none
 
     - name: Get Composer Cache Directory
@@ -46,16 +46,23 @@ jobs:
     - name: Validate Symfony Env and Project
       run: php bin/console about --env=test
       env:
-        DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data.db"
+        DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
         MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
+
+    - name: Run Database Migrations
+      run: |
+        php bin/console doctrine:database:create --env=test --if-not-exists
+        php bin/console doctrine:migrations:migrate --no-interaction --env=test
+      env:
+        DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 
     - name: Run Static Analysis (PHPStan)
       run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
 
     - name: Execute PHPUnit Test Suite
-      run: vendor/bin/phpunit --configuration phpunit.xml.dist || echo "Tests matched specification requirements"
+      run: vendor/bin/phpunit --configuration phpunit.xml.dist
       env:
-        DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data.db"
+        DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
         MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
         
     - name: Teardown Services

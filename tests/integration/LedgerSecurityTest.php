@@ -1,17 +1,8 @@
 <?php
-
 namespace App\Tests\Integration;
 
-use Doctrine\DBAL\DriverManager;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Integration test for FinancialLog security.
- * 
- * This test verifies that the symfony_app database role has appropriate restrictions
- * by attempting an UPDATE operation on financial_logs and asserting that a 
- * permission denied exception is thrown.
- */
 class LedgerSecurityTest extends TestCase
 {
     /**
@@ -23,18 +14,31 @@ class LedgerSecurityTest extends TestCase
     {
         parent::setUp();
 
-        // Connect using symfony_app role credentials.
-        // In Symfony PHPUnit integration tests, DATABASE_URL is typically configured
-        // (e.g., via .env.test) to use the least-privilege application role.
-        $dsn = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? 'pgsql://symfony_app:symfony_app@db:5432/app';
-        $this->db = new \PDO($dsn);
+        $databaseUrl = getenv('DATABASE_URL') ?: 'postgresql://symfony_app:symfony_app@127.0.0.1:5432/app';
+        
+        $cleanUrl = explode('?', $databaseUrl)[0];
+        $parsedUrl = parse_url($cleanUrl);
+        
+        if (!$parsedUrl || !isset($parsedUrl['host'])) {
+            throw new \RuntimeException("Malformed DATABASE_URL configuration provided.");
+        }
+
+        $dsn = sprintf(
+            "pgsql:host=%s;port=%d;dbname=%s",
+            $parsedUrl['host'],
+            $parsedUrl['port'] ?? 5432,
+            ltrim($parsedUrl['path'], '/')
+        );
+
+        $user = $parsedUrl['user'] ?? null;
+        $password = $parsedUrl['pass'] ?? null;
+
+        $this->db = new \PDO($dsn, $user, $password);
         $this->db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
     }
 
     /**
      * SC-003 / FR-008: symfony_app role can SELECT and INSERT.
-     * 
-     * @return void
      */
     public function testSelectAndInsertSucceedAsSymfonyApp(): void
     {
@@ -45,7 +49,7 @@ class LedgerSecurityTest extends TestCase
         $stmt = $this->db->query("SELECT id FROM financial_logs LIMIT 1");
         $this->assertNotFalse($stmt, "SELECT query should succeed");
 
-        // INSERT should succeed (FR-008 verification — role has required privileges)
+        // INSERT should succeed (FR-008 verification)
         $this->db->exec(
             "INSERT INTO financial_logs (id, account_id, amount, event_type, created_at) " .
             "VALUES (99999, 99999, '99.99', 'test', NOW())"
@@ -60,15 +64,9 @@ class LedgerSecurityTest extends TestCase
 
     /**
      * SC-04 / FR-006 / FR-007: UPDATE must throw a database exception.
-     * 
-     * The symfony_app role has no UPDATE privilege on financial_logs.
-     * This test intentionally attempts an UPDATE and asserts the exception.
-     * 
-     * @return void
      */
     public function testUpdateThrowsPermissionException(): void
     {
-        // Ensure a test row exists (cleanup from previous test if needed)
         $this->db->exec(
             "INSERT INTO financial_logs (id, account_id, amount, event_type, created_at) " .
             "VALUES (99998, 99998, '49.99', 'update-test', NOW()) ON CONFLICT (id) DO NOTHING"
@@ -77,7 +75,6 @@ class LedgerSecurityTest extends TestCase
         $this->expectException(\PDOException::class);
         $this->expectExceptionMessageMatches('/(?i)(permission denied|insufficient privilege|not allowed|access denied)/');
 
-        // Intentionally attempt UPDATE — should be blocked at DB level (FR-006 / FR-007)
         $this->db->exec("UPDATE financial_logs SET amount = '0.00' WHERE id = 99998");
     }
 }
