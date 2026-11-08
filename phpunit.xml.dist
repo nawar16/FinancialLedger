@@ -3,7 +3,8 @@
          xsi:noNamespaceSchemaLocation="https://phpunit.de"
          bootstrap="vendor/autoload.php"
          colors="true"
-         cacheDirectory=".phpunit.cache">
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="false">
     <php>
         <ini name="display_errors" value="1" />
         <ini name="error_reporting" value="-1" />
