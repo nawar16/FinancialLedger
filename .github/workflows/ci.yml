@@ -43,32 +43,16 @@ jobs:
       run: |
         if [ -f .env.test ]; then cp .env.test .env; else echo "APP_ENV=test" > .env; fi
 
-    - name: Validate Symfony Env and Project
-      run: php bin/console about --env=test
-      env:
-        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
-        MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
-
-    - name: Create Test Database as Root Superuser
+    - name: Initialize Database & Run Migrations
       run: |
-        php bin/console doctrine:database:create --env=test --if-not-exists
-      env:
-        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
-
-    - name: Run Database Migrations & Create Roles
-      run: |
-        php bin/console doctrine:migrations:migrate --no-interaction --env=test
-      env:
-        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+        docker compose -f .github/workflows/docker-compose.ci.yml exec -T php php bin/console doctrine:database:create --env=test --if-not-exists
+        docker compose -f .github/workflows/docker-compose.ci.yml exec -T php php bin/console doctrine:migrations:migrate --no-interaction --env=test
 
     - name: Run Static Analysis (PHPStan)
       run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
 
     - name: Execute PHPUnit Test Suite
-      run: vendor/bin/phpunit --configuration phpunit.xml.dist
-      env:
-        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
-        MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
+      run: docker compose -f .github/workflows/docker-compose.ci.yml exec -T php vendor/bin/phpunit --configuration phpunit.xml.dist
 
     - name: Teardown Services
       if: always()
