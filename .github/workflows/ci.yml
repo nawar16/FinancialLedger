@@ -64,11 +64,12 @@ jobs:
       run: |
         PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "CREATE ROLE symfony_app WITH LOGIN PASSWORD 'symfony_app';"
         PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "ALTER DATABASE app OWNER TO symfony_app;"
+        PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "GRANT ALL PRIVILEGES ON SCHEMA public TO symfony_app;"
 
     - name: Run Database Migrations
       run: php bin/console doctrine:migrations:migrate --no-interaction --env=test
       env:
-        DATABASE_URL: "postgresql://postgres:password@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+        DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 
     - name: Revoke Update Privileges For Security Test
       run: |
@@ -82,3 +83,7 @@ jobs:
       env:
         DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
         MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
+
+    - name: Teardown Services
+      if: always()
+      run: docker compose -f .github/workflows/docker-compose.ci.yml down
