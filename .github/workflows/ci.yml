@@ -15,8 +15,8 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_DB: app
-          POSTGRES_USER: symfony_app
-          POSTGRES_PASSWORD: symfony_app
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
         ports:
           - 5432:5432
         options: >-
@@ -60,10 +60,19 @@ jobs:
       run: |
         if [ -f .env.test ]; then cp .env.test .env; else echo "APP_ENV=test" > .env; fi
 
+    - name: Create Application Database Role
+      run: |
+        PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "CREATE ROLE symfony_app WITH LOGIN PASSWORD 'symfony_app';"
+        PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "ALTER DATABASE app OWNER TO symfony_app;"
+
     - name: Run Database Migrations
       run: php bin/console doctrine:migrations:migrate --no-interaction --env=test
       env:
-        DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+        DATABASE_URL: "postgresql://postgres:password@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+
+    - name: Revoke Update Privileges For Security Test
+      run: |
+        PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "REVOKE UPDATE ON financial_logs FROM symfony_app;"
 
     - name: Run Static Analysis (PHPStan)
       run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
