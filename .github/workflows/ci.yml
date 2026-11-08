@@ -43,16 +43,23 @@ jobs:
       run: |
         if [ -f .env.test ]; then cp .env.test .env; else echo "APP_ENV=test" > .env; fi
 
-    - name: Initialize Database & Run Migrations
+    - name: Initialize Database Infrastructure
       run: |
-        docker compose -f .github/workflows/docker-compose.ci.yml exec -T php php bin/console doctrine:database:create --env=test --if-not-exists
-        docker compose -f .github/workflows/docker-compose.ci.yml exec -T php php bin/console doctrine:migrations:migrate --no-interaction --env=test
+        docker compose -f .github/workflows/docker-compose.ci.yml exec -T db psql -U postgres -c "CREATE DATABASE app;" || echo "Database exists"
+
+    - name: Run Database Migrations
+      run: php bin/console doctrine:migrations:migrate --no-interaction --env=test
+      env:
+        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 
     - name: Run Static Analysis (PHPStan)
       run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
 
     - name: Execute PHPUnit Test Suite
-      run: docker compose -f .github/workflows/docker-compose.ci.yml exec -T php vendor/bin/phpunit --configuration phpunit.xml.dist
+      run: vendor/bin/phpunit --configuration phpunit.xml.dist
+      env:
+        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+        MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
 
     - name: Teardown Services
       if: always()
