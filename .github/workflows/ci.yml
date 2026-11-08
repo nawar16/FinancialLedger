@@ -2,7 +2,7 @@ name: Symfony CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, feature/* ]
+    branches: [ main, "feature/*" ]
   pull_request:
     branches: [ main ]
 
@@ -10,20 +10,37 @@ jobs:
   tests:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: app
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
-
-    - name: Start Postgres 16 & RabbitMQ Services
-      run: |
-        docker compose -f .github/workflows/docker-compose.ci.yml up -d --wait
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
-        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, pdo_sqlite
         coverage: none
+        ini-values: memory_limit=-1
 
     - name: Get Composer Cache Directory
       id: composer-cache
@@ -43,21 +60,30 @@ jobs:
       run: |
         if [ -f .env.test ]; then cp .env.test .env; else echo "APP_ENV=test" > .env; fi
 
-    - name: Validate Symfony Env and Project
-      run: php bin/console about --env=test
+    - name: Create Application Database Role
+      run: |
+        PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "CREATE ROLE symfony_app WITH LOGIN PASSWORD 'symfony_app';"
+        PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "ALTER DATABASE app OWNER TO symfony_app;"
+        PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "GRANT ALL PRIVILEGES ON SCHEMA public TO symfony_app;"
+
+    - name: Run Database Migrations
+      run: php bin/console doctrine:migrations:migrate --no-interaction --env=test
       env:
-        DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data.db"
-        MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
+        DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+
+    - name: Revoke Update Privileges For Security Test
+      run: |
+        PGPASSWORD=password psql -h 127.0.0.1 -U postgres -d app -c "REVOKE UPDATE ON financial_logs FROM symfony_app;"
 
     - name: Run Static Analysis (PHPStan)
       run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
 
     - name: Execute PHPUnit Test Suite
-      run: vendor/bin/phpunit --configuration phpunit.xml.dist || echo "Tests matched specification requirements"
+      run: vendor/bin/phpunit --configuration phpunit.xml.dist
       env:
-        DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data.db"
+        DATABASE_URL: "postgresql://symfony_app:symfony_app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
         MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
-        
+
     - name: Teardown Services
       if: always()
       run: docker compose -f .github/workflows/docker-compose.ci.yml down
