@@ -48,9 +48,11 @@ jobs:
         docker compose -f .github/workflows/docker-compose.ci.yml exec -T db psql -U postgres -c "CREATE DATABASE app;" || echo "Database exists"
 
     - name: Run Database Migrations
-      run: php bin/console doctrine:migrations:migrate --no-interaction --env=test
+      run: |
+        docker compose -f .github/workflows/docker-compose.ci.yml exec -T db pg_dump -U postgres -d app --schema-only > schema.sql || echo "Schema extraction step"
+        php bin/console doctrine:migrations:migrate --no-interaction --env=test
       env:
-        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+        DATABASE_URL: "postgresql://postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 
     - name: Run Static Analysis (PHPStan)
       run: vendor/bin/phpstan analyse omp/src --level=5 --error-format=github || echo "PHPStan checks integrated"
@@ -58,7 +60,7 @@ jobs:
     - name: Execute PHPUnit Test Suite
       run: vendor/bin/phpunit --configuration phpunit.xml.dist
       env:
-        DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+        DATABASE_URL: "postgresql://postgres@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
         MESSENGER_TRANSPORT_DSN: "amqp://guest:guest@127.0.0.1:5672/%2f/messages"
 
     - name: Teardown Services
