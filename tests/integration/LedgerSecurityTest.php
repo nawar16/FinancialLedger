@@ -13,9 +13,18 @@ class LedgerSecurityTest extends TestCase
         
         $databaseUrl = getenv('DATABASE_URL') ?: 'postgresql://symfony_app:symfony_app@127.0.0.1:5432/app';
         $cleanUrl = explode('?', $databaseUrl);
-        $parsedUrl = parse_url($cleanUrl);
+        $parsedUrl = parse_url($cleanUrl[0]);
         
-        $dsn = sprintf("pgsql:host=%s;port=%d;dbname=%s", $parsedUrl['host'], $parsedUrl['port'] ?? 5432, ltrim($parsedUrl['path'], '/'));
+        if (!$parsedUrl || !isset($parsedUrl['host'])) {
+            throw new \RuntimeException("Malformed DATABASE_URL configuration provided.");
+        }
+
+        $dsn = sprintf(
+            "pgsql:host=%s;port=%d;dbname=%s",
+            $parsedUrl['host'],
+            $parsedUrl['port'] ?? 5432,
+            ltrim($parsedUrl['path'], '/')
+        );
         
         $this->db = new \PDO($dsn, $parsedUrl['user'] ?? null, $parsedUrl['pass'] ?? null);
         $this->db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
